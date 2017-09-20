@@ -22,6 +22,7 @@ app.get('/', function (req, res, next) {
       $('#topic_list .cell').each(function (idx, element) {
         var $element = $(element)
         items.push({
+          //寻找节点的儿子
           author:$element
                 .children('.user_avatar')
                 .children()
