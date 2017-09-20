@@ -35,12 +35,20 @@ superagent.get(cnodeUrl)
         var ep = new eventproxy();
 
         ep.after('topic_html', topicUrls.length, function (topics) {
+            
+
+            var userUrls = [];
 
             topics = topics.map(function (topic) {
  
                 var topicUrl = topic[0];
                 var topicHtml = topic[1];
                 var $ = cheerio.load(topicHtml);
+
+                var userHref = url.resolve(cnodeUrl,$('.user_avatar').attr('href'));
+
+                userUrls.push(userHref);
+
                 return ({
                     title: $('.topic_full_title').text().trim(),
                     href: topicUrl,
@@ -48,8 +56,29 @@ superagent.get(cnodeUrl)
                 });
             });
 
-            console.log('final:');
-            console.log(topics);
+
+            var ep2 = new eventproxy();
+            ep.after('user_html',userUrls.length,function (users) {
+                users = users.map(function(user,index){
+                    var $ = cheerio.load(user);
+                    console.log(typeof topics)
+                    return({
+                        title: topics[index].title,
+                        href:  topics[index].href,
+                        comment1: topics[index].comment1,
+                        author1: $('.inner').children('a').text(),
+                        score1: $('.big').text()
+                    })
+                })
+                console.log(users);
+            })
+
+            userUrls.forEach(userUrl => {
+                superagent.get(userUrl).end(function (err,res) {
+                    console.log('fetch' + userUrl + '  successful');
+                    ep.emit('user_html',res.text)
+                })
+            })
         })
 
 
@@ -57,11 +86,11 @@ superagent.get(cnodeUrl)
             superagent.get(topicUrl).end(function (err, res) {
                 console.log('fetch ' + topicUrl + ' successful');
                 //执行之后提醒监听函数
-                ep.emit('topic_html', [topicUrl, res.text])
+                ep.emit('topic_html', [topicUrl, res.text]);
             });
         }, this);
 
-
+        
     });
 
 
