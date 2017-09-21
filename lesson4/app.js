@@ -35,48 +35,44 @@ superagent.get(cnodeUrl)
         var ep = new eventproxy();
 
         ep.after('topic_html', topicUrls.length, function (topics) {
-            
-
-            var userUrls = [];
 
             topics = topics.map(function (topic) {
- 
+
                 var topicUrl = topic[0];
                 var topicHtml = topic[1];
                 var $ = cheerio.load(topicHtml);
 
-                var userHref = url.resolve(cnodeUrl,$('.user_avatar').attr('href'));
-
-                userUrls.push(userHref);
+                var userHref = url.resolve(cnodeUrl, $('.user_info').children().attr('href'));
 
                 return ({
                     title: $('.topic_full_title').text().trim(),
                     href: topicUrl,
                     comment1: $('.reply_content').eq(0).text().trim(),
+                    userInfo: userHref
                 });
             });
 
 
             var ep2 = new eventproxy();
-            ep.after('user_html',userUrls.length,function (users) {
-                users = users.map(function(user,index){
+            ep.after('user_html', topics.length, function (users) {
+                users = users.map(function (user, index) {
                     var $ = cheerio.load(user);
-                    console.log(typeof topics)
-                    return({
+                    
+                    return ({
                         title: topics[index].title,
-                        href:  topics[index].href,
+                        href: topics[index].href,
                         comment1: topics[index].comment1,
-                        author1: $('.inner').children('a').text(),
-                        score1: $('.big').text()
+                        author1: $('.user_name').children('a').text(),
+                        score1: $('.floor').children('.big').text()
                     })
                 })
                 console.log(users);
             })
 
-            userUrls.forEach(userUrl => {
-                superagent.get(userUrl).end(function (err,res) {
-                    console.log('fetch' + userUrl + '  successful');
-                    ep.emit('user_html',res.text)
+            topics.forEach(topic => {
+                superagent.get(topic.userInfo).end(function (err, res) {
+                    console.log('fetch' + topic.userInfo + '  successful');
+                    ep.emit('user_html', res.text)
                 })
             })
         })
@@ -90,7 +86,7 @@ superagent.get(cnodeUrl)
             });
         }, this);
 
-        
+
     });
 
 
